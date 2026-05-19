@@ -1,0 +1,109 @@
+### CREATING BOARDS
+POST http://localhost:5000/api/boards
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjlhZTk4MWFhOTE0Mjk0NTM4ZDdlZiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODA3NjgzNiwiZXhwIjoxNzc4MTYzMjM2fQ.u-Zfgx1OIhzBhTcD12qAzuvwNo4tMVmL3zis40R2CVI
+
+{
+  "name": "Project Gamma"
+}
+
+### CREATING LISTS
+Authorization: 
+POST http://localhost:5000/api/lists
+Content-Type: application/json
+
+{
+  "title": "Done",
+  "boardId": "69f981531ae57b23b6cd8282"
+}
+
+### CREATING CARDS
+POST http://localhost:5000/api/cards
+Content-Type: application/json
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjlhZTk4MWFhOTE0Mjk0NTM4ZDdlZiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODA0MTQzMiwiZXhwIjoxNzc4MTI3ODMyfQ.8JQ92IIwwwgFBzCP3UZbrwVuCqZjkyzZXsnwR7_2cII
+
+{
+  "title": "Task 2",
+  "listId": "69f9825a1ae57b23b6cd8283"
+}
+
+### GET BOARDS
+Authorization:
+GET http://localhost:5000/api/boards/
+
+### GET LISTS IN BOARD
+Authorization: 
+GET http://localhost:5000/api/lists/69f981531ae57b23b6cd8282
+
+### GET CARDS IN LISTS
+GET http://localhost:5000/api/cards/69f9825a1ae57b23b6cd8283
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjlhZTk4MWFhOTE0Mjk0NTM4ZDdlZiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODA0MjExNywiZXhwIjoxNzc4MTI4NTE3fQ.nL2N0qD_GLQEG9r1nCUvFwVk1Yz-U6h9eRoIFQIW1eg
+
+### GET ALL BOARDS
+Authorization:
+GET http://localhost:5000/api/boards/69f981531ae57b23b6cd8282/full
+
+###update board
+Authorization:
+PUT http://localhost:5000/api/boards/69f981531ae57b23b6cd8282
+Content-Type: application/json
+
+{
+  "name": "Updated Project"
+}
+
+###delete board
+Authorization:
+DELETE http://localhost:5000/api/boards/69f982e21ae57b23b6cd8287
+
+###update list
+Authorization: 
+PUT http://localhost:5000/api/lists/69f9825a1ae57b23b6cd8283
+Content-Type: application/json
+
+{
+  "title": "To Do"
+}
+
+###delete list
+Authorization: 
+DELETE http://localhost:5000/api/lists/
+
+###update card
+Authorization: 
+PUT http://localhost:5000/api/cards/69f982b21ae57b23b6cd8286
+Content-Type: application/json
+
+{
+  "title": "Task 1"
+}
+
+###delete card
+Authorization: 
+DELETE http://localost:5000/api/cards/
+
+### signup
+POST http://localhost:5000/api/auth/signup
+Content-Type: application/json
+
+{
+  "name": "Rithesh",
+  "email": "rithesh@gmail.com",
+  "password": "123456",
+  "role": "admin"
+}
+
+### login 
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "rithesh@gmail.com",
+  "password": "123456"
+}
+
+###upload link
+POST http://localhost:5000/api/cards/69f982b21ae57b23b6cd8286/upload
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjlhZTk4MWFhOTE0Mjk0NTM4ZDdlZiIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3ODA1NDU2MywiZXhwIjoxNzc4MTQwOTYzfQ.AXvrqHlPKmko_vLsiW5XmHivogGh55hvquH5QRC0pY0
+
+file=@C:/Users/Shekar/Downloads/299040.jpg
