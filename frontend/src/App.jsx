@@ -9,6 +9,7 @@ import CardModal from './components/CardModal';
 import AuthPage from './components/AuthPage';
 import TeamCollaboration from './components/TeamCollaboration';
 import ProfileModal from './components/ProfileModal';
+import { getFullUrl } from './services/api';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -245,7 +246,7 @@ function App() {
                     >
                       {member.profilePhoto ? (
                         <img
-                          src={member.profilePhoto}
+                          src={getFullUrl(member.profilePhoto)}
                           alt={member.userName}
                           className="w-8 h-8 rounded-full border-2 border-gray-800 object-cover"
                         />

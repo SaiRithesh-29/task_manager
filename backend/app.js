@@ -17,13 +17,31 @@ import activityRoutes from './routes/activityRoutes.js';
 const app = express();
 const server = createServer(app);
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://task-manager-puce-xi.vercel.app'];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.includes('*') || 
+                      allowedOrigins.includes(origin) || 
+                      origin.endsWith('.vercel.app') || 
+                      origin.startsWith('http://localhost:');
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
 
 const io = new Server(server, {
-  cors: { origin: FRONTEND_URL }
+  cors: corsOptions
 });
 
-app.use(cors({ origin: FRONTEND_URL }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const __filename = fileURLToPath(import.meta.url);
