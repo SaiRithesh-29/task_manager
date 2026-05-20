@@ -4,7 +4,7 @@ const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace('/api', '');
   }
-  return '';
+  return 'https://task-manager-uc41.onrender.com';
 };
 
 export const getFullUrl = (path) => {
@@ -13,7 +13,7 @@ export const getFullUrl = (path) => {
 };
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://task-manager-uc41.onrender.com/api',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -31,7 +31,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.data) {
-      error.response.data.error = error.response.data.error || 'Something went wrong';
+      if (typeof error.response.data === 'string') {
+        const isHtml = error.response.data.trim().startsWith('<!');
+        error.response.data = {
+          error: isHtml ? 'Internal server error (HTML response)' : error.response.data
+        };
+      } else {
+        error.response.data.error = error.response.data.error || 'Something went wrong';
+      }
+    } else if (error.response) {
+      error.response.data = { error: 'Something went wrong' };
     }
     return Promise.reject(error);
   }
