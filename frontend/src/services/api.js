@@ -13,7 +13,7 @@ export const getFullUrl = (path) => {
 };
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://task-manager-uc41.onrender.com/api',
+  baseURL: 'https://task-manager-uc41.onrender.com/api',
   headers: {
     'Content-Type': 'application/json'
   }
