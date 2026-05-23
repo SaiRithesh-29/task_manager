@@ -251,7 +251,7 @@ function App() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <Logo className="w-7 h-7 flex-shrink-0 hidden md:block" />
+              <Logo className="w-7 h-7 flex-shrink-0" />
               {boardData?.color && (
                 <span className={`w-2.5 h-2.5 rounded-full ${
                   boardData.color === 'green' ? 'bg-green-400' : boardData.color === 'red' ? 'bg-red-400' : boardData.color === 'purple' ? 'bg-purple-400' : boardData.color === 'orange' ? 'bg-orange-400' : boardData.color === 'teal' ? 'bg-teal-400' : boardData.color === 'pink' ? 'bg-pink-400' : boardData.color === 'indigo' ? 'bg-indigo-400' : boardData.color === 'cyan' ? 'bg-cyan-400' : boardData.color === 'amber' ? 'bg-amber-400' : 'bg-blue-400'
