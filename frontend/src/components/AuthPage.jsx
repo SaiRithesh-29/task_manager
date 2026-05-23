@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { login, signup } from '../services/authService';
+import Logo from './Logo';
 
 function AuthPage({ onAuth }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -37,9 +38,12 @@ function AuthPage({ onAuth }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-white mb-6 text-center">Task Manager</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
+      <div className="bg-gray-800 p-6 sm:p-8 rounded-lg w-full max-w-sm mx-4">
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <Logo className="w-10 h-10" />
+          <h1 className="text-2xl font-bold text-white">Task Manager</h1>
+        </div>
         <h2 className="text-lg text-gray-300 mb-4 text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
 
         {error && (

@@ -295,8 +295,8 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
   const allMembers = boardMembers.length > 0 ? boardMembers : card.assignees || [];
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 py-10 overflow-y-auto" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-[680px] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 py-0 sm:py-10 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white rounded-none sm:rounded-xl shadow-2xl w-full sm:w-[680px] min-h-screen sm:min-h-0 max-h-full sm:max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between z-10 rounded-t-xl">

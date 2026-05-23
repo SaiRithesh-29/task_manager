@@ -16,7 +16,7 @@ const BOARD_COLORS = [
   { name: 'amber', bg: 'bg-amber-500' },
 ];
 
-function Sidebar({ boards, sharedBoards, selectedBoard, onSelectBoard, onBoardsUpdate, user, onLogout, boardData, onViewProfile }) {
+function Sidebar({ boards, sharedBoards, selectedBoard, onSelectBoard, onBoardsUpdate, user, onLogout, boardData, onViewProfile, isMobileOpen, onMobileClose }) {
   const currentUserId = user?._id || user?.id;
   const [isCreating, setIsCreating] = useState(false);
   const [boardName, setBoardName] = useState('');
@@ -114,27 +114,44 @@ function Sidebar({ boards, sharedBoards, selectedBoard, onSelectBoard, onBoardsU
     : user?.email?.charAt(0).toUpperCase() || '?';
 
   return (
-    <div className="w-60 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white flex flex-col h-screen select-none relative">
-      {/* Decorative gradient orbs */}
-      <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+    <>
+      {isMobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onMobileClose} />
+      )}
+      <div className={`
+        ${isMobileOpen ? 'fixed inset-y-0 left-0 z-50 animate-slide-in-left' : 'hidden'}
+        md:relative md:block md:w-60
+        bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-white flex flex-col h-screen select-none
+      `}>
+        {/* Mobile close button */}
+        {isMobileOpen && (
+          <button onClick={onMobileClose} className="absolute top-3 right-3 text-gray-400 hover:text-white md:hidden z-10">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
 
-      {/* User Profile */}
-      <div className="p-4 border-b border-white/5 relative">
-        <button
-          onClick={onViewProfile}
-          className="w-full flex items-center gap-3 hover:bg-white/5 -m-1 p-1 rounded-lg transition-colors text-left"
-        >
-          <span className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 text-white text-sm flex items-center justify-center font-bold shadow-lg shadow-purple-500/20 ring-2 ring-white/10">
-            {initials}
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-white/90">{user?.name || 'User'}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-          </div>
-          <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-sm shadow-green-400/50" title="Online" />
-        </button>
-      </div>
+        {/* Decorative gradient orbs */}
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* User Profile */}
+        <div className="p-4 border-b border-white/5 relative">
+          <button
+            onClick={onViewProfile}
+            className="w-full flex items-center gap-3 hover:bg-white/5 -m-1 p-1 rounded-lg transition-colors text-left"
+          >
+            <span className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 text-white text-sm flex items-center justify-center font-bold shadow-lg shadow-purple-500/20 ring-2 ring-white/10">
+              {initials}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate text-white/90">{user?.name || 'User'}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            </div>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-sm shadow-green-400/50" title="Online" />
+          </button>
+        </div>
 
       <div className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-gray-700">
         {/* Board Search */}
@@ -424,7 +441,8 @@ function Sidebar({ boards, sharedBoards, selectedBoard, onSelectBoard, onBoardsU
           onUpdate={onBoardsUpdate}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

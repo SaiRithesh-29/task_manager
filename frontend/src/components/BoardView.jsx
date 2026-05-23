@@ -64,41 +64,41 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
       <div className="absolute bottom-10 right-1/4 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="px-6 py-3 flex justify-between items-center border-b border-white/5 relative">
+      <div className="px-4 md:px-6 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 relative">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+          <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2.5">
             {boardData.name}
             <span className={`w-2 h-2 rounded-full ${
               boardData.color === 'green' ? 'bg-green-400' : boardData.color === 'red' ? 'bg-red-400' : boardData.color === 'purple' ? 'bg-purple-400' : boardData.color === 'orange' ? 'bg-orange-400' : boardData.color === 'teal' ? 'bg-teal-400' : boardData.color === 'pink' ? 'bg-pink-400' : boardData.color === 'indigo' ? 'bg-indigo-400' : boardData.color === 'cyan' ? 'bg-cyan-400' : boardData.color === 'amber' ? 'bg-amber-400' : 'bg-blue-400'
             } animate-pulse-glow`} />
           </h2>
-          <p className="text-sm text-blue-200/60 mt-0.5">
+          <p className="text-xs md:text-sm text-blue-200/60 mt-0.5">
             {boardData.lists?.length || 0} lists · {totalVisible} cards
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           {/* Search */}
-          <div className="relative">
-            <svg className="w-4 h-4 text-white/30 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="relative flex-1 sm:flex-initial min-w-0">
+            <svg className="w-4 h-4 text-white/30 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search cards..."
-              className="w-48 pl-8 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
+              placeholder="Search..."
+              className="w-full sm:w-36 md:w-48 pl-8 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
             />
           </div>
 
           {/* Label Filter */}
           {uniqueLabels.length > 0 && (
             <div className="relative group">
-              <button className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 text-sm px-3 py-1.5 rounded-lg transition-all">
+              <button className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 text-sm px-2.5 md:px-3 py-1.5 rounded-lg transition-all">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
-                Labels
+                <span className="hidden md:inline">Labels</span>
                 {filterLabels.length > 0 && <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{filterLabels.length}</span>}
               </button>
               <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 w-56 hidden group-hover:block z-20">
@@ -131,23 +131,23 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
             </div>
           )}
 
-          <button onClick={() => setShowMembers(true)} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 text-sm px-3 py-1.5 rounded-lg transition-all">
+          <button onClick={() => setShowMembers(true)} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 text-sm px-2.5 md:px-3 py-1.5 rounded-lg transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
             </svg>
-            Team
+            <span className="hidden md:inline">Team</span>
           </button>
-          <button onClick={() => setShowActivity(!showActivity)} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 text-sm px-3 py-1.5 rounded-lg transition-all">
+          <button onClick={() => setShowActivity(!showActivity)} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-white/80 text-sm px-2.5 md:px-3 py-1.5 rounded-lg transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {showActivity ? 'Hide Log' : 'Activity'}
+            <span className="hidden md:inline">{showActivity ? 'Hide Log' : 'Activity'}</span>
           </button>
         </div>
       </div>
 
       {/* Board Content */}
-      <div className="flex-1 overflow-x-auto p-6">
+      <div className="flex-1 overflow-x-auto p-4 md:p-6">
         <div className="flex gap-4 h-full items-start">
           {filteredLists.map(list => (
             <div key={list._id} className="relative group">

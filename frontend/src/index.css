@@ -32,6 +32,10 @@
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
   .animate-float {
     animation: float 4s ease-in-out infinite;
   }
@@ -45,5 +49,8 @@
   }
   .animate-fade-in {
     animation: fade-in 0.3s ease-out;
+  }
+  .animate-slide-in-left {
+    animation: slide-in-left 0.2s ease-out;
   }
 }

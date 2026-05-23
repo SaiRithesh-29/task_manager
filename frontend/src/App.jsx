@@ -10,6 +10,7 @@ import AuthPage from './components/AuthPage';
 import TeamCollaboration from './components/TeamCollaboration';
 import NotificationBell from './components/NotificationBell';
 import ProfileModal from './components/ProfileModal';
+import Logo from './components/Logo';
 import { getFullUrl } from './services/api';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
   const [selectedCard, setSelectedCard] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [onlineMembers, setOnlineMembers] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -204,7 +206,7 @@ function App() {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+          <Logo className="w-16 h-16 animate-float" />
           <p className="text-sm text-gray-400 animate-pulse-glow">Loading...</p>
         </div>
       </div>
@@ -222,31 +224,43 @@ function App() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen">
-<Sidebar
+      <div className="flex flex-col md:flex-row h-screen">
+        <Sidebar
             boards={boards}
             sharedBoards={sharedBoards}
             selectedBoard={selectedBoard}
-            onSelectBoard={setSelectedBoard}
+            onSelectBoard={(id) => { setSelectedBoard(id); setSidebarOpen(false); }}
             onBoardsUpdate={loadBoards}
             user={user}
             onLogout={handleLogout}
             boardData={boardData}
-            onViewProfile={() => setShowProfile(true)}
+            onViewProfile={() => { setShowProfile(true); setSidebarOpen(false); }}
+            isMobileOpen={sidebarOpen}
+            onMobileClose={() => setSidebarOpen(false)}
           />
 
-        <div className="flex-1 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col">
-          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white px-5 py-2.5 flex justify-between items-center shadow-lg shadow-black/5 border-b border-white/5">
-            <div className="flex items-center gap-3">
+        <div className="flex-1 bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden flex flex-col min-w-0">
+          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white px-3 md:px-5 py-2.5 flex justify-between items-center shadow-lg shadow-black/5 border-b border-white/5 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-1.5 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Open sidebar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <Logo className="w-7 h-7 flex-shrink-0 hidden md:block" />
               {boardData?.color && (
                 <span className={`w-2.5 h-2.5 rounded-full ${
                   boardData.color === 'green' ? 'bg-green-400' : boardData.color === 'red' ? 'bg-red-400' : boardData.color === 'purple' ? 'bg-purple-400' : boardData.color === 'orange' ? 'bg-orange-400' : boardData.color === 'teal' ? 'bg-teal-400' : boardData.color === 'pink' ? 'bg-pink-400' : boardData.color === 'indigo' ? 'bg-indigo-400' : boardData.color === 'cyan' ? 'bg-cyan-400' : boardData.color === 'amber' ? 'bg-amber-400' : 'bg-blue-400'
-                } shadow-sm`} />
+                } shadow-sm flex-shrink-0`} />
               )}
-              <span className="text-sm font-medium tracking-wide">{boardData?.name || 'Task Manager'}</span>
+              <span className="text-sm font-medium tracking-wide truncate">{boardData?.name || 'Task Manager'}</span>
             </div>
             {onlineMembers.length > 0 && (
-              <div className="flex items-center gap-3 mx-4">
+              <div className="hidden md:flex items-center gap-3 mx-4">
                 <div className="flex -space-x-2">
                   {onlineMembers.slice(0, 4).map((member, i) => (
                     <div
