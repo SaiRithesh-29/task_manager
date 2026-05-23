@@ -2,6 +2,7 @@ import express from 'express';
 import Card from '../models/Card.js';
 import List from '../models/List.js';
 import Activity from '../models/Activity.js';
+import Notification from '../models/Notification.js';
 import { verifyToken } from '../middlewares/auth.js';
 import { upload } from '../middlewares/upload.js';
 
@@ -34,6 +35,11 @@ const getBoardId = async (cardId) => {
 const emitEvent = (req, boardId, event, data) => {
   const io = req.app.get('io');
   if (io && boardId) io.to(`board:${boardId}`).emit(event, data);
+};
+
+const emitToUser = (req, userId, event, data) => {
+  const io = req.app.get('io');
+  if (io && userId) io.to(`user:${userId}`).emit(event, data);
 };
 
 // Create Card
@@ -89,9 +95,27 @@ router.put('/:id', verifyToken, async (req, res) => {
       } else if (req.body.title && oldCard.title !== req.body.title) {
         const activity = await createActivity(boardId, req.user.id, req.user.name, 'update_card', `Renamed card to "${updated.title}"`, updated._id, 'card');
         emitEvent(req, boardId, 'activity', activity);
-      } else if (req.body.dueDate && oldCard.dueDate?.toString() !== new Date(req.body.dueDate).toString()) {
+      } else if (req.body.dueDate !== undefined && oldCard.dueDate?.toString() !== new Date(req.body.dueDate).toString()) {
         const activity = await createActivity(boardId, req.user.id, req.user.name, 'set_due_date', `Set due date for "${updated.title}"`, updated._id, 'card');
         emitEvent(req, boardId, 'activity', activity);
+        if (req.body.dueDate) {
+          const usersToNotify = new Set();
+          if (oldCard.createdBy && oldCard.createdBy !== req.user.id) usersToNotify.add(oldCard.createdBy);
+          oldCard.assignees.forEach(a => { if (a.userId !== req.user.id) usersToNotify.add(a.userId); });
+          const formattedDate = new Date(req.body.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          for (const userId of usersToNotify) {
+            const notification = await Notification.create({
+              userId,
+              boardId,
+              cardId: updated._id,
+              cardTitle: updated.title,
+              type: 'due_date_set',
+              message: `"${updated.title}" is due on ${formattedDate}`,
+              createdBy: req.user.id
+            });
+            emitToUser(req, userId, 'notification', notification);
+          }
+        }
       } else if (req.body.description !== undefined && oldCard.description !== req.body.description) {
         const activity = await createActivity(boardId, req.user.id, req.user.name, 'update_card', `Updated description for "${updated.title}"`, updated._id, 'card');
         emitEvent(req, boardId, 'activity', activity);

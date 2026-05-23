@@ -5,6 +5,9 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import Board from './models/Board.js';
+import Card from './models/Card.js';
+import List from './models/List.js';
+import Notification from './models/Notification.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -13,6 +16,7 @@ import cardRoutes from './routes/cardRoutes.js';
 import listRoutes from './routes/listRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 const server = createServer(app);
@@ -58,6 +62,7 @@ app.use('/api/boards', boardRoutes);
 app.use('/api/cards', cardRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/uploads', express.static('uploads'));
 
 const onlineUsers = new Map();
@@ -66,8 +71,17 @@ const userBoards = new Map();
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
+  socket.on('register-user', ({ userId }) => {
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
+  });
+
   socket.on('join-board', async ({ boardId, userId, userName }) => {
     socket.join(`board:${boardId}`);
+    if (userId) {
+      socket.join(`user:${userId}`);
+    }
     onlineUsers.set(socket.id, { userId, userName, boardId });
     if (!userBoards.has(userId)) userBoards.set(userId, new Set());
     userBoards.get(userId).add(boardId);
@@ -217,6 +231,75 @@ io.on('connection', (socket) => {
 });
 
 app.set('io', io);
+
+const getBoardId = async (cardId) => {
+  try {
+    const card = await Card.findById(cardId);
+    if (!card) return null;
+    const list = await List.findById(card.listId);
+    return list?.boardId;
+  } catch { return null; }
+};
+
+const checkDueDates = async () => {
+  try {
+    const now = new Date();
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const cards = await Card.find({
+      dueDate: { $ne: null },
+      archived: false
+    });
+
+    for (const card of cards) {
+      const dueDate = new Date(card.dueDate);
+      const boardId = await getBoardId(card._id);
+      if (!boardId) continue;
+
+      const usersToNotify = new Set();
+      if (card.createdBy) usersToNotify.add(card.createdBy);
+      card.assignees.forEach(a => usersToNotify.add(a.userId));
+
+      const isOverdue = dueDate < startOfToday;
+      const isDueSoon = !isOverdue && dueDate <= in24h && dueDate >= now;
+
+      for (const userId of usersToNotify) {
+        if (isOverdue) {
+          const existing = await Notification.findOne({
+            userId, cardId: card._id, type: 'due_date_overdue'
+          });
+          if (!existing) {
+            const notification = await Notification.create({
+              userId, boardId, cardId: card._id, cardTitle: card.title,
+              type: 'due_date_overdue',
+              message: `"${card.title}" is overdue!`
+            });
+            io.to(`user:${userId}`).emit('notification', notification);
+          }
+        } else if (isDueSoon) {
+          const existing = await Notification.findOne({
+            userId, cardId: card._id, type: 'due_date_reminder'
+          });
+          if (!existing) {
+            const formattedDate = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const notification = await Notification.create({
+              userId, boardId, cardId: card._id, cardTitle: card.title,
+              type: 'due_date_reminder',
+              message: `"${card.title}" is due on ${formattedDate}`
+            });
+            io.to(`user:${userId}`).emit('notification', notification);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Due date check error:', err);
+  }
+};
+
+setInterval(checkDueDates, 5 * 60 * 1000);
+checkDueDates();
 
 const PORT = process.env.PORT || 5000;
 

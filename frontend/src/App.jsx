@@ -8,6 +8,7 @@ import BoardView from './components/BoardView';
 import CardModal from './components/CardModal';
 import AuthPage from './components/AuthPage';
 import TeamCollaboration from './components/TeamCollaboration';
+import NotificationBell from './components/NotificationBell';
 import ProfileModal from './components/ProfileModal';
 import { getFullUrl } from './services/api';
 
@@ -33,9 +34,11 @@ function App() {
       try {
         const savedUser = localStorage.getItem('user');
         if (savedUser) {
-          setUser(JSON.parse(savedUser));
+          const parsed = JSON.parse(savedUser);
+          setUser(parsed);
+          socket.connect();
+          socket.emit('register-user', { userId: parsed._id || parsed.id });
         }
-        socket.connect();
         loadBoards();
       } catch (e) {
         localStorage.removeItem('token');
@@ -51,6 +54,7 @@ function App() {
   const handleAuth = (userData) => {
     setUser(userData);
     socket.connect();
+    socket.emit('register-user', { userId: userData._id || userData.id });
     loadBoards();
   };
 
@@ -68,10 +72,15 @@ function App() {
   useEffect(() => {
     if (selectedBoard && user) {
       loadBoardData(selectedBoard);
-      socket.emit('join-board', { boardId: selectedBoard, userId: user._id || user.id, userName: user.name || user.email });
+      const uid = user._id || user.id;
+      socket.emit('register-user', { userId: uid });
+      socket.emit('join-board', { boardId: selectedBoard, userId: uid, userName: user.name || user.email });
     }
     return () => {
-      if (selectedBoard && user) socket.emit('leave-board', { boardId: selectedBoard, userId: user._id || user.id });
+      if (selectedBoard && user) {
+        const uid = user._id || user.id;
+        socket.emit('leave-board', { boardId: selectedBoard, userId: uid });
+      }
     };
   }, [selectedBoard, user]);
 
@@ -277,6 +286,7 @@ function App() {
                 </div>
               </div>
             )}
+            <NotificationBell userId={user?._id || user?.id} />
             <TeamCollaboration board={boardData} user={user} onUpdate={() => loadBoardData(selectedBoard)} />
           </div>
           <div className="flex-1 overflow-hidden relative">
