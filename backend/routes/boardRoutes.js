@@ -105,14 +105,21 @@ router.get('/:boardId/full', verifyToken, async (req, res) => {
     const board = await Board.findById(req.params.boardId);
     if (!board) return res.status(404).json({ error: "Board not found" });
 
-    const lists = await List.find({ boardId: req.params.boardId }).sort({ order: 1 });
+    const lists = await List.find({ boardId: req.params.boardId }).sort({ order: 1 }).lean();
+    const listIds = lists.map(l => l._id);
+    const cards = await Card.find({ listId: { $in: listIds } }).sort({ order: 1 }).lean();
 
-    const listData = await Promise.all(
-      lists.map(async (list) => {
-        const cards = await Card.find({ listId: list._id }).sort({ order: 1 });
-        return { ...list.toObject(), cards };
-      })
-    );
+    const cardsByList = {};
+    for (const card of cards) {
+      const key = card.listId.toString();
+      if (!cardsByList[key]) cardsByList[key] = [];
+      cardsByList[key].push(card);
+    }
+
+    const listData = lists.map(list => ({
+      ...list,
+      cards: cardsByList[list._id.toString()] || []
+    }));
 
     res.json({ ...board.toObject(), lists: listData });
   } catch (err) {

@@ -6,6 +6,7 @@ function AuthPage({ onAuth }) {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -24,6 +25,7 @@ function AuthPage({ onAuth }) {
       return;
     }
 
+    setSubmitting(true);
     try {
       const res = isLogin ? await login({ email: form.email, password: form.password }) : await signup(form);
       if (isLogin) {
@@ -39,6 +41,8 @@ function AuthPage({ onAuth }) {
       console.log('Full error:', err);
       console.log('Error response:', err.response?.data);
       setError(err.response?.data?.error || err.message || 'Something went wrong');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -83,9 +87,20 @@ function AuthPage({ onAuth }) {
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium"
+            disabled={submitting}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isLogin ? 'Login' : 'Sign Up'}
+            {submitting ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {isLogin ? 'Logging in...' : 'Signing up...'}
+              </>
+            ) : (
+              isLogin ? 'Login' : 'Sign Up'
+            )}
           </button>
         </form>
 

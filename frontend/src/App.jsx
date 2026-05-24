@@ -21,6 +21,7 @@ function App() {
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [boardData, setBoardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [boardLoading, setBoardLoading] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -165,11 +166,14 @@ function App() {
   };
 
   const loadBoardData = async (boardId) => {
+    setBoardLoading(true);
     try {
       const res = await getBoardFull(boardId);
       setBoardData(res.data);
     } catch (err) {
       console.error('Error loading board data:', err);
+    } finally {
+      setBoardLoading(false);
     }
   };
 
@@ -310,7 +314,15 @@ function App() {
             <TeamCollaboration board={boardData} user={user} onUpdate={() => loadBoardData(selectedBoard)} />
           </div>
           <div className="flex-1 overflow-hidden relative">
-            {boardData ? (
+            {boardLoading ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-4">
+                <svg className="animate-spin h-10 w-10 text-blue-400" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm font-medium text-gray-500">Loading board...</p>
+              </div>
+            ) : boardData ? (
               <BoardView
                 boardData={boardData}
                 onUpdate={() => loadBoardData(selectedBoard)}
