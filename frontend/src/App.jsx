@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCorners, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { getBoards, getBoardFull, getSharedBoards, getOnlineMembers } from './services/boardService';
 import { updateCard } from './services/cardService';
@@ -29,6 +29,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
+  const fetchIdRef = useRef(0);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -92,9 +93,12 @@ function App() {
 
   const refreshBoardData = useCallback(async () => {
     if (!selectedBoard) return;
+    const fetchId = ++fetchIdRef.current;
     try {
       const res = await getBoardFull(selectedBoard);
-      setBoardData(res.data);
+      if (fetchId === fetchIdRef.current) {
+        setBoardData(res.data);
+      }
     } catch (err) {
       console.error('Error refreshing board data:', err);
     }
@@ -175,13 +179,18 @@ function App() {
 
   const loadBoardData = async (boardId) => {
     setBoardLoading(true);
+    const fetchId = ++fetchIdRef.current;
     try {
       const res = await getBoardFull(boardId);
-      setBoardData(res.data);
+      if (fetchId === fetchIdRef.current) {
+        setBoardData(res.data);
+      }
     } catch (err) {
       console.error('Error loading board data:', err);
     } finally {
-      setBoardLoading(false);
+      if (fetchId === fetchIdRef.current) {
+        setBoardLoading(false);
+      }
     }
   };
 
@@ -229,10 +238,13 @@ function App() {
         return { ...prev, lists: newLists };
       });
 
+      const moveFetchId = ++fetchIdRef.current;
       updateCard(active.id, { listId: targetListId })
         .catch(() => {
-          setBoardData(snapshot);
-          refreshBoardData();
+          if (moveFetchId === fetchIdRef.current) {
+            setBoardData(snapshot);
+            refreshBoardData();
+          }
         });
     }
   };
