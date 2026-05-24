@@ -211,6 +211,8 @@ function App() {
       const sourceListId = findListId(active.id);
       if (sourceListId === targetListId) return;
 
+      const snapshot = boardData;
+
       setBoardData(prev => {
         if (!prev) return prev;
         const newLists = prev.lists.map(list => {
@@ -228,7 +230,10 @@ function App() {
       });
 
       updateCard(active.id, { listId: targetListId })
-        .catch(() => loadBoardData(selectedBoard));
+        .catch(() => {
+          setBoardData(snapshot);
+          refreshBoardData();
+        });
     }
   };
 
