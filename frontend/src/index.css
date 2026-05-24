@@ -6,10 +6,6 @@
 }
 
 @layer base {
-  html, body, #root {
-    height: 100%;
-    overflow: hidden;
-  }
   * {
     scrollbar-width: thin;
     scrollbar-color: rgba(255,255,255,0.08) transparent;
