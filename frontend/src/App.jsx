@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DndContext, closestCorners, DragOverlay, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { getBoards, getBoardFull, getSharedBoards, getOnlineMembers } from './services/boardService';
 import { updateCard } from './services/cardService';
@@ -90,29 +90,37 @@ function App() {
     };
   }, [selectedBoard, user]);
 
-  useEffect(() => {
-    const refresh = () => { if (selectedBoard) loadBoardData(selectedBoard); };
+  const refreshBoardData = useCallback(async () => {
+    if (!selectedBoard) return;
+    try {
+      const res = await getBoardFull(selectedBoard);
+      setBoardData(res.data);
+    } catch (err) {
+      console.error('Error refreshing board data:', err);
+    }
+  }, [selectedBoard]);
 
-    socket.on('card-created', refresh);
-    socket.on('card-moved', refresh);
-    socket.on('card-deleted', refresh);
-    socket.on('card-updated', refresh);
-    socket.on('card-archived', refresh);
-    socket.on('card-unarchived', refresh);
-    socket.on('list-created', refresh);
-    socket.on('list-deleted', refresh);
+  useEffect(() => {
+    socket.on('card-created', refreshBoardData);
+    socket.on('card-moved', refreshBoardData);
+    socket.on('card-deleted', refreshBoardData);
+    socket.on('card-updated', refreshBoardData);
+    socket.on('card-archived', refreshBoardData);
+    socket.on('card-unarchived', refreshBoardData);
+    socket.on('list-created', refreshBoardData);
+    socket.on('list-deleted', refreshBoardData);
 
     return () => {
-      socket.off('card-created', refresh);
-      socket.off('card-moved', refresh);
-      socket.off('card-deleted', refresh);
-      socket.off('card-updated', refresh);
-      socket.off('card-archived', refresh);
-      socket.off('card-unarchived', refresh);
-      socket.off('list-created', refresh);
-      socket.off('list-deleted', refresh);
+      socket.off('card-created', refreshBoardData);
+      socket.off('card-moved', refreshBoardData);
+      socket.off('card-deleted', refreshBoardData);
+      socket.off('card-updated', refreshBoardData);
+      socket.off('card-archived', refreshBoardData);
+      socket.off('card-unarchived', refreshBoardData);
+      socket.off('list-created', refreshBoardData);
+      socket.off('list-deleted', refreshBoardData);
     };
-  }, [selectedBoard]);
+  }, [selectedBoard, refreshBoardData]);
 
   useEffect(() => {
     const handleUserOnline = (data) => {
@@ -326,7 +334,7 @@ function App() {
               </div>
             )}
             <NotificationBell userId={user?._id || user?.id} />
-            <TeamCollaboration board={boardData} user={user} onUpdate={() => loadBoardData(selectedBoard)} />
+            <TeamCollaboration board={boardData} user={user} onUpdate={refreshBoardData} />
           </div>
           <div className="flex-1 overflow-hidden relative">
             {boardLoading ? (
@@ -340,7 +348,7 @@ function App() {
             ) : boardData ? (
               <BoardView
                 boardData={boardData}
-                onUpdate={() => loadBoardData(selectedBoard)}
+                onUpdate={refreshBoardData}
                 onCardClick={setSelectedCard}
                 user={user}
               />
@@ -385,7 +393,7 @@ function App() {
         <CardModal
           card={selectedCard}
           onClose={() => setSelectedCard(null)}
-          onUpdate={() => loadBoardData(selectedBoard)}
+          onUpdate={refreshBoardData}
           boardMembers={boardData?.members || []}
           user={user}
         />
