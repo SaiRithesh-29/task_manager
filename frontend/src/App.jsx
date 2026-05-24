@@ -230,7 +230,7 @@ function App() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex flex-col md:flex-row h-screen">
+      <div className="flex flex-col md:flex-row h-screen overflow-hidden">
         <Sidebar
             boards={boards}
             sharedBoards={sharedBoards}

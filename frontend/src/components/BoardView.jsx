@@ -157,7 +157,7 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
       </div>
 
       {/* Board Content */}
-      <div className="flex-1 overflow-x-auto p-4 md:p-6">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6">
         <div className="flex gap-4 h-full items-start">
           {filteredLists.map(list => (
                 <div key={list._id} className="relative group">
