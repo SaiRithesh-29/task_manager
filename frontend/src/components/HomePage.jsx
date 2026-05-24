@@ -100,12 +100,6 @@ function HomePage({ onLoginClick }) {
           </div>
         </div>
       </main>
-
-      <footer className="border-t border-white/5 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-500 text-sm">Organize the tasks here....</p>
-        </div>
-      </footer>
     </div>
   );
 }
