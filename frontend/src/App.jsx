@@ -200,12 +200,27 @@ function App() {
 
     const targetListId = findListId(over.id);
     if (targetListId) {
-      try {
-        await updateCard(active.id, { listId: targetListId });
-        loadBoardData(selectedBoard);
-      } catch (err) {
-        console.error('Error moving card:', err);
-      }
+      const sourceListId = findListId(active.id);
+      if (sourceListId === targetListId) return;
+
+      setBoardData(prev => {
+        if (!prev) return prev;
+        const newLists = prev.lists.map(list => {
+          if (list._id === sourceListId) {
+            return { ...list, cards: list.cards.filter(c => c._id !== active.id) };
+          }
+          if (list._id === targetListId) {
+            const movedCard = prev.lists.flatMap(l => l.cards || []).find(c => c._id === active.id);
+            if (!movedCard) return list;
+            return { ...list, cards: [...list.cards, { ...movedCard, listId: targetListId }] };
+          }
+          return list;
+        });
+        return { ...prev, lists: newLists };
+      });
+
+      updateCard(active.id, { listId: targetListId })
+        .catch(() => loadBoardData(selectedBoard));
     }
   };
 
