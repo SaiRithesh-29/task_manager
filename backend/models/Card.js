@@ -31,7 +31,9 @@ const cardSchema = new mongoose.Schema({
     fileSize: Number
   }],
   createdBy: String,
-  archived: { type: Boolean, default: false }
+  archived: { type: Boolean, default: false },
+  editedBy: { userId: String, name: String },
+  editedAt: Date
 }, { timestamps: true });
 
 export default mongoose.model('Card', cardSchema);

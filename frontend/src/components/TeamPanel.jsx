@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { addMember, removeMember } from '../services/memberService';
+import { addMember, removeMember, updateMemberPermissions } from '../services/memberService';
+import { getDeleteRequests, approveDeleteRequest, denyDeleteRequest } from '../services/deleteRequestService';
 import socket from '../services/socket';
 
 function TeamPanel({ board, user, onClose, onUpdate }) {
@@ -9,6 +10,8 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
   const [loading, setLoading] = useState(false);
   const [onlineMembers, setOnlineMembers] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [deleteRequests, setDeleteRequests] = useState([]);
+  const [showDeleteRequests, setShowDeleteRequests] = useState(false);
 
   useEffect(() => {
     if (!board?._id) return;
@@ -21,14 +24,46 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
       setOnlineMembers(data.onlineMembers || []);
     };
 
+    const handleDeleteRequest = (data) => {
+      if (isCurrentUserAdmin) loadDeleteRequests();
+    };
+
+    const handleDeleteRequestUpdated = (data) => {
+      if (isCurrentUserAdmin) loadDeleteRequests();
+    };
+
     socket.on('user-online', handleOnline);
     socket.on('user-offline', handleOffline);
+    socket.on('delete-request-created', handleDeleteRequest);
+    socket.on('delete-request-updated', handleDeleteRequestUpdated);
 
     return () => {
       socket.off('user-online', handleOnline);
       socket.off('user-offline', handleOffline);
+      socket.off('delete-request-created', handleDeleteRequest);
+      socket.off('delete-request-updated', handleDeleteRequestUpdated);
     };
   }, [board?._id]);
+
+  const currentUserId = user?._id || user?.id;
+  const isCurrentUserAdmin = board?.members?.some(
+    m => m.userId === currentUserId && (m.role === 'admin' || m.userId === board?.createdBy)
+  );
+
+  const loadDeleteRequests = async () => {
+    try {
+      const res = await getDeleteRequests(board._id);
+      setDeleteRequests(res.data);
+    } catch (err) {
+      console.error('Error loading delete requests:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isCurrentUserAdmin && board?._id) {
+      loadDeleteRequests();
+    }
+  }, [isCurrentUserAdmin, board?._id]);
 
   const isOnline = (userId) => {
     return onlineMembers.some(m => m.userId === userId);
@@ -39,7 +74,7 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
   };
 
   const canManage = () => {
-    const currentMember = board?.members?.find(m => m.userId === (user?._id || user?.id));
+    const currentMember = board?.members?.find(m => m.userId === currentUserId);
     return currentMember && (currentMember.role === 'admin' || currentMember.userId === board?.createdBy);
   };
 
@@ -67,7 +102,7 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
   };
 
   const handleRemoveMember = async (member) => {
-    if (member.userId === user?._id || member.userId === user?.id) {
+    if (member.userId === currentUserId) {
       if (!confirm('Are you sure you want to leave this board?')) return;
     } else {
       if (!confirm(`Remove ${member.name || member.email} from this board?`)) return;
@@ -76,13 +111,42 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
     try {
       await removeMember(board._id, member.userId);
       onUpdate();
-      if (member.userId === user?._id || member.userId === user?.id) {
+      if (member.userId === currentUserId) {
         onClose(true);
       }
     } catch (err) {
       console.error('Error removing member:', err);
       setError('Error removing member');
       setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleTogglePermission = async (member, field) => {
+    try {
+      await updateMemberPermissions(board._id, member.userId, {
+        [field]: !member.permissions?.[field]
+      });
+      onUpdate();
+    } catch (err) {
+      console.error('Error updating permission:', err);
+    }
+  };
+
+  const handleApproveDelete = async (request) => {
+    try {
+      await approveDeleteRequest(request._id);
+      loadDeleteRequests();
+    } catch (err) {
+      console.error('Error approving delete:', err);
+    }
+  };
+
+  const handleDenyDelete = async (request) => {
+    try {
+      await denyDeleteRequest(request._id);
+      loadDeleteRequests();
+    } catch (err) {
+      console.error('Error denying delete:', err);
     }
   };
 
@@ -95,13 +159,10 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
 
   if (!board) return null;
 
-  const currentUserId = user?._id || user?.id;
-  const isCurrentUserAdmin = canManage();
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => onClose()}>
       <div
-        className="bg-white rounded-xl shadow-2xl w-[480px] max-h-[85vh] overflow-hidden"
+        className="bg-white rounded-xl shadow-2xl w-[520px] max-h-[90vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
@@ -126,7 +187,37 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
           </div>
         </div>
 
-        <div className="p-5 max-h-[60vh] overflow-y-auto">
+        <div className="p-5 max-h-[70vh] overflow-y-auto">
+          {isCurrentUserAdmin && deleteRequests.length > 0 && (
+            <div className="mb-5 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+              <button
+                onClick={() => setShowDeleteRequests(!showDeleteRequests)}
+                className="flex items-center justify-between w-full text-sm font-semibold text-orange-700"
+              >
+                <span>Pending Delete Requests ({deleteRequests.length})</span>
+                <svg className={`w-4 h-4 transition-transform ${showDeleteRequests ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showDeleteRequests && (
+                <div className="mt-3 space-y-2">
+                  {deleteRequests.map(req => (
+                    <div key={req._id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-orange-100 text-sm">
+                      <div>
+                        <p className="font-medium text-gray-800">{req.targetName}</p>
+                        <p className="text-xs text-gray-500">{req.targetType} · by {req.requestedBy?.name}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => handleApproveDelete(req)} className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg transition-colors">Approve</button>
+                        <button onClick={() => handleDenyDelete(req)} className="px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors">Deny</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               <span className="text-lg">👥</span>
@@ -180,6 +271,29 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
                       <span className="text-xs text-green-600">Online</span>
                     ) : (
                       <span className="text-xs text-gray-400">Offline</span>
+                    )}
+
+                    {(isCurrentUserAdmin && !isMe && !admin) && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleTogglePermission(member, 'canEdit')}
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-medium transition-colors ${
+                            member.permissions?.canEdit ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
+                          }`}
+                          title="Toggle edit permission"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleTogglePermission(member, 'canDelete')}
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-medium transition-colors ${
+                            member.permissions?.canDelete ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-500'
+                          }`}
+                          title="Toggle delete permission"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     )}
 
                     {(isCurrentUserAdmin && !isMe) && (
@@ -259,6 +373,14 @@ function TeamPanel({ board, user, onClose, onUpdate }) {
                 </svg>
                 {copied ? 'Link copied!' : 'Copy invite link'}
               </button>
+            </div>
+          )}
+
+          {isCurrentUserAdmin && (
+            <div className="border-t pt-4 mt-4">
+              <p className="text-[11px] text-gray-400">
+                <strong>Permissions:</strong> Toggle Edit/Delete for each member. Admins have full access.
+              </p>
             </div>
           )}
         </div>

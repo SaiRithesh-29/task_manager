@@ -38,12 +38,19 @@ function List({ list, onUpdate, onCardClick, user, canEdit }) {
       <div className={`bg-gradient-to-r ${gradient} p-3 rounded-t-xl relative overflow-hidden`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.15),transparent_60%)] pointer-events-none" />
         <div className="flex justify-between items-center relative">
-          <h3 className="font-bold text-sm text-white flex items-center gap-2">
-            {list.title.replace(/^\d+\./, '')}
-            <span className="bg-white/25 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
-              {list.cards?.length || 0}
-            </span>
-          </h3>
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm text-white flex items-center gap-2">
+              {list.title.replace(/^\d+\./, '')}
+              <span className="bg-white/25 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
+                {list.cards?.length || 0}
+              </span>
+            </h3>
+            {list.editedBy && list.editedBy.userId !== currentUserId && (
+              <p className="text-[10px] text-white/60 italic mt-0.5 truncate">
+                edited by {list.editedBy.name}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

@@ -13,6 +13,7 @@ import {
   deleteCard,
   deleteAttachment
 } from '../services/cardService';
+import { createDeleteRequest } from '../services/deleteRequestService';
 
 const PRESET_LABELS = [
   { name: 'Feature', color: 'green' },
@@ -165,9 +166,14 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
   const handleDelete = async () => {
     if (!confirm('Delete this card permanently?')) return;
     try {
-      await deleteCard(card._id);
-      onUpdate();
-      onClose();
+      const res = await deleteCard(card._id);
+      if (res.data?.request) {
+        alert('Delete request sent to admins for approval');
+        onClose();
+      } else {
+        onUpdate();
+        onClose();
+      }
     } catch (err) {
       console.error('Error deleting card:', err);
     }
@@ -311,8 +317,8 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
               className={`w-full text-xl font-bold text-gray-900 border-0 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-1 transition-colors ${!canEdit ? 'bg-transparent cursor-not-allowed' : ''}`}
             />
             <p className="text-xs text-gray-400 mt-1">
-              {card.createdAt && ` · Created ${formatDate(card.createdAt)}`}
-              {card.createdAt && ` · Created ${formatDate(card.createdAt)}`}
+              {card.createdAt && `Created ${formatDate(card.createdAt)}`}
+              {card.editedBy && card.editedBy.userId !== currentUserId && ` · Edited by ${card.editedBy.name}`}
             </p>
           </div>
           <div className="flex items-center gap-2">

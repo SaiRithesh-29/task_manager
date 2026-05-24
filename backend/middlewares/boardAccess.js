@@ -55,7 +55,37 @@ export const requireEditAccess = async (req, res, next) => {
       return res.status(403).json({ error: 'You have read-only access to this board' });
     }
 
+    if (!member.permissions?.canEdit) {
+      return res.status(403).json({ error: 'Edit access not granted' });
+    }
+
     req.board = board;
+    next();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const requireDeleteAccess = async (req, res, next) => {
+  try {
+    const boardId = await getBoardId(req);
+    if (!boardId) return next();
+
+    const board = await Board.findById(boardId);
+    if (!board) return next();
+
+    const member = board.members.find(m => m.userId === req.user.id);
+    if (!member) {
+      return res.status(403).json({ error: 'You are not a member of this board' });
+    }
+
+    if (member.role === 'admin' || member.permissions?.canDelete) {
+      req.board = board;
+      return next();
+    }
+
+    req.board = board;
+    req.deleteRequested = true;
     next();
   } catch (err) {
     res.status(500).json({ error: err.message });

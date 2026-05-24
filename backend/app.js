@@ -17,6 +17,7 @@ import listRoutes from './routes/listRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import deleteRequestRoutes from './routes/deleteRequestRoutes.js';
 
 const app = express();
 const server = createServer(app);
@@ -63,6 +64,7 @@ app.use('/api/cards', cardRoutes);
 app.use('/api/lists', listRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/delete-requests', deleteRequestRoutes);
 app.use('/uploads', express.static('uploads'));
 
 const onlineUsers = new Map();

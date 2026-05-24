@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createBoard, updateBoard, deleteBoard } from '../services/boardService';
+import { createDeleteRequest } from '../services/deleteRequestService';
 import TeamPanel from './TeamPanel';
 import { getFullUrl } from '../services/api';
 
@@ -80,15 +81,26 @@ function Sidebar({ boards, sharedBoards, selectedBoard, onSelectBoard, onBoardsU
     e.stopPropagation();
     const boardToDelete = [...boards, ...sharedBoards].find(b => b._id === boardId);
     if (!canDeleteBoard(boardToDelete)) {
-      alert('Only the board creator can delete this board');
-      return;
+      if (!confirm('You need admin approval to delete this board. Send a delete request?')) return;
+      try {
+        await createDeleteRequest({ boardId, targetType: 'board', targetId: boardId, targetName: boardToDelete?.name });
+        alert('Delete request sent to admins');
+        return;
+      } catch (err) {
+        alert('Error sending delete request');
+        return;
+      }
     }
     if (!confirm('Are you sure you want to delete this board and all its content?')) return;
     setDeletingId(boardId);
     try {
-      await deleteBoard(boardId);
-      if (selectedBoard === boardId) onSelectBoard(null);
-      onBoardsUpdate();
+      const res = await deleteBoard(boardId);
+      if (res.data?.request) {
+        alert('Delete request sent to admins for approval');
+      } else {
+        if (selectedBoard === boardId) onSelectBoard(null);
+        onBoardsUpdate();
+      }
     } catch (err) {
       console.error('Error deleting board:', err);
       alert(err.response?.data?.error || 'Error deleting board');

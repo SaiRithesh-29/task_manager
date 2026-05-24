@@ -16,6 +16,10 @@ const boardSchema = new mongoose.Schema({
       enum: ['admin', 'member', 'observer'],
       default: 'member'
     },
+    permissions: {
+      canEdit: { type: Boolean, default: true },
+      canDelete: { type: Boolean, default: false }
+    },
     joinedAt: { type: Date, default: Date.now }
   }],
   onlineMembers: [{
@@ -24,7 +28,9 @@ const boardSchema = new mongoose.Schema({
     profilePhoto: String,
     socketId: String,
     lastActive: { type: Date, default: Date.now }
-  }]
+  }],
+  editedBy: { userId: String, name: String },
+  editedAt: Date
 }, { timestamps: true });
 
 export default mongoose.model('Board', boardSchema);

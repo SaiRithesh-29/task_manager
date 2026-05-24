@@ -10,7 +10,9 @@ const listSchema = new mongoose.Schema({
   order: {
     type: Number,
     default: 0
-  }
+  },
+  editedBy: { userId: String, name: String },
+  editedAt: Date
 }, { timestamps: true });
 
 export default mongoose.model('List', listSchema);

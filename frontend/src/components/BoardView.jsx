@@ -33,8 +33,12 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
   const handleDeleteList = async (listId) => {
     if (!confirm('Delete this list and all its cards?')) return;
     try {
-      await deleteList(listId);
-      onUpdate();
+      const res = await deleteList(listId);
+      if (res.data?.request) {
+        alert('Delete request sent to admins for approval');
+      } else {
+        onUpdate();
+      }
     } catch (err) {
       console.error('Error deleting list:', err);
     }
@@ -77,6 +81,9 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
           </h2>
           <p className="text-xs md:text-sm text-blue-200/60 mt-0.5">
             {boardData.lists?.length || 0} lists · {totalVisible} cards
+            {boardData.editedBy && boardData.editedBy.userId !== currentUserId && (
+              <span className="ml-2 italic">· edited by {boardData.editedBy.name}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">

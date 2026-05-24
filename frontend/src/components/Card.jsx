@@ -113,6 +113,12 @@ function Card({ card, onClick, user, canEdit }) {
         )}
       </div>
 
+      {card.editedBy && card.editedBy.userId !== currentUserId && (
+        <div className="mt-1.5 text-[10px] text-gray-400 italic">
+          edited by {card.editedBy.name}
+        </div>
+      )}
+
       {totalSubtasks > 0 && (
         <div className="mt-2.5 w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
           <div

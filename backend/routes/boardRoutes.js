@@ -1,11 +1,12 @@
 import express from 'express';
 import { verifyToken } from '../middlewares/auth.js';
-import { requireEditAccess } from '../middlewares/boardAccess.js';
+import { requireEditAccess, requireDeleteAccess } from '../middlewares/boardAccess.js';
 import Board from '../models/Board.js';
 import List from '../models/List.js';
 import Card from '../models/Card.js';
 import Activity from '../models/Activity.js';
 import User from '../models/User.js';
+import DeleteRequest from '../models/DeleteRequest.js';
 
 const DEFAULT_LISTS = ['1.ToDo', '2.Progress', '3.Done'];
 
@@ -28,7 +29,8 @@ router.post('/', verifyToken, async (req, res) => {
         userId: req.user.id,
         email: user?.email || '',
         name: user?.name || '',
-        role: 'admin'
+        role: 'admin',
+        permissions: { canEdit: true, canDelete: true }
       }]
     });
 
@@ -121,7 +123,11 @@ router.get('/:boardId/full', verifyToken, async (req, res) => {
 // Update board
 router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
   try {
-    const updated = await Board.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Board.findByIdAndUpdate(req.params.id, {
+      ...req.body,
+      editedBy: { userId: req.user.id, name: req.user.name },
+      editedAt: new Date()
+    }, { new: true });
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -129,16 +135,24 @@ router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
 });
 
 // Delete board
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, requireDeleteAccess, async (req, res) => {
   try {
     const board = await Board.findById(req.params.id);
     if (!board) return res.status(404).json({ error: "Board not found" });
-    
-    const userId = req.user.id || req.user._id;
-    console.log('Delete attempt - User:', userId, 'Creator:', board.createdBy);
-    
-    if (board.createdBy !== userId && board.createdBy?.toString() !== userId) {
-      return res.status(403).json({ error: "Only the board creator can delete this board" });
+
+    if (req.deleteRequested) {
+      const request = await DeleteRequest.create({
+        boardId: req.params.id,
+        targetType: 'board',
+        targetId: req.params.id,
+        targetName: board.name,
+        requestedBy: { userId: req.user.id, name: req.user.name }
+      });
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`board:${req.params.id}`).emit('delete-request-created', request);
+      }
+      return res.json({ message: 'Delete request sent to admins', request });
     }
 
     const lists = await List.find({ boardId: req.params.id });
@@ -169,7 +183,8 @@ router.post('/:id/members', verifyToken, requireEditAccess, async (req, res) => 
       userId: user._id.toString(),
       email: user.email,
       name: user.name,
-      role: 'member'
+      role: 'member',
+      permissions: { canEdit: true, canDelete: false }
     });
 
     await board.save();
@@ -217,6 +232,35 @@ router.patch('/:id/members/:userId/role', verifyToken, requireEditAccess, async 
       io.to(`board:${req.params.id}`).emit('member-updated', { userId: req.params.userId, role });
     }
 
+    res.json(board);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update member permissions
+router.patch('/:id/members/:userId/permissions', verifyToken, async (req, res) => {
+  try {
+    const { canEdit, canDelete } = req.body;
+    const board = await Board.findById(req.params.id);
+    if (!board) return res.status(404).json({ error: "Board not found" });
+
+    const requester = board.members.find(m => m.userId === req.user.id);
+    if (!requester || requester.role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can change permissions" });
+    }
+
+    const member = board.members.find(m => m.userId === req.params.userId);
+    if (!member) return res.status(404).json({ error: "Member not found" });
+
+    if (member.role === 'admin') {
+      return res.status(403).json({ error: "Cannot change admin permissions" });
+    }
+
+    if (canEdit !== undefined) member.permissions.canEdit = canEdit;
+    if (canDelete !== undefined) member.permissions.canDelete = canDelete;
+
+    await board.save();
     res.json(board);
   } catch (err) {
     res.status(500).json({ error: err.message });

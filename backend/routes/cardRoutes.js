@@ -3,8 +3,9 @@ import Card from '../models/Card.js';
 import List from '../models/List.js';
 import Activity from '../models/Activity.js';
 import Notification from '../models/Notification.js';
+import DeleteRequest from '../models/DeleteRequest.js';
 import { verifyToken } from '../middlewares/auth.js';
-import { requireBoardMember, requireEditAccess } from '../middlewares/boardAccess.js';
+import { requireBoardMember, requireEditAccess, requireDeleteAccess } from '../middlewares/boardAccess.js';
 import { upload } from '../middlewares/upload.js';
 
 const router = express.Router();
@@ -83,7 +84,11 @@ router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
     const oldCard = await Card.findById(req.params.id);
     if (!oldCard) return res.status(404).json({ error: 'Card not found' });
 
-    const updated = await Card.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Card.findByIdAndUpdate(req.params.id, {
+      ...req.body,
+      editedBy: { userId: req.user.id, name: req.user.name },
+      editedAt: new Date()
+    }, { new: true });
 
     const list = await List.findById(updated.listId || oldCard.listId);
     const boardId = list?.boardId;
@@ -133,7 +138,11 @@ router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
 // Update Labels
 router.put('/:id/labels', verifyToken, requireEditAccess, async (req, res) => {
   try {
-    const card = await Card.findByIdAndUpdate(req.params.id, { labels: req.body.labels }, { new: true });
+    const card = await Card.findByIdAndUpdate(req.params.id, {
+      labels: req.body.labels,
+      editedBy: { userId: req.user.id, name: req.user.name },
+      editedAt: new Date()
+    }, { new: true });
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
       const activity = await createActivity(boardId, req.user.id, req.user.name, 'add_label', `Updated labels on "${card.title}"`, card._id, 'card');
@@ -152,6 +161,8 @@ router.post('/:id/subtasks', verifyToken, requireEditAccess, async (req, res) =>
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
     card.subtasks.push({ title: req.body.title, completed: false });
+    card.editedBy = { userId: req.user.id, name: req.user.name };
+    card.editedAt = new Date();
     await card.save();
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
@@ -173,6 +184,8 @@ router.patch('/:id/subtasks/:subtaskId/toggle', verifyToken, requireEditAccess, 
     const subtask = card.subtasks.id(req.params.subtaskId);
     if (!subtask) return res.status(404).json({ error: 'Subtask not found' });
     subtask.completed = !subtask.completed;
+    card.editedBy = { userId: req.user.id, name: req.user.name };
+    card.editedAt = new Date();
     await card.save();
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
@@ -193,6 +206,8 @@ router.delete('/:id/subtasks/:subtaskId', verifyToken, requireEditAccess, async 
     if (!card) return res.status(404).json({ error: 'Card not found' });
     const subtask = card.subtasks.id(req.params.subtaskId);
     card.subtasks.pull(req.params.subtaskId);
+    card.editedBy = { userId: req.user.id, name: req.user.name };
+    card.editedAt = new Date();
     await card.save();
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
@@ -216,6 +231,8 @@ router.post('/:id/comments', verifyToken, requireBoardMember, async (req, res) =
       name: req.body.name || req.user.name || 'Unknown',
       text: req.body.text
     });
+    card.editedBy = { userId: req.user.id, name: req.user.name };
+    card.editedAt = new Date();
     await card.save();
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
@@ -235,6 +252,8 @@ router.delete('/:id/comments/:commentId', verifyToken, requireBoardMember, async
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
     card.comments.pull(req.params.commentId);
+    card.editedBy = { userId: req.user.id, name: req.user.name };
+    card.editedAt = new Date();
     await card.save();
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
@@ -249,7 +268,11 @@ router.delete('/:id/comments/:commentId', verifyToken, requireBoardMember, async
 // Update Assignees
 router.put('/:id/assignees', verifyToken, requireEditAccess, async (req, res) => {
   try {
-    const card = await Card.findByIdAndUpdate(req.params.id, { assignees: req.body.assignees }, { new: true });
+    const card = await Card.findByIdAndUpdate(req.params.id, {
+      assignees: req.body.assignees,
+      editedBy: { userId: req.user.id, name: req.user.name },
+      editedAt: new Date()
+    }, { new: true });
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
       const activity = await createActivity(boardId, req.user.id, req.user.name, 'assign_user', `Updated assignees on "${card.title}"`, card._id, 'card');
@@ -266,7 +289,11 @@ router.put('/:id/assignees', verifyToken, requireEditAccess, async (req, res) =>
 router.patch('/:id/archive', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const { archived } = req.body;
-    const card = await Card.findByIdAndUpdate(req.params.id, { archived }, { new: true });
+    const card = await Card.findByIdAndUpdate(req.params.id, {
+      archived,
+      editedBy: { userId: req.user.id, name: req.user.name },
+      editedAt: new Date()
+    }, { new: true });
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
       const action = archived ? 'archive_card' : 'update_card';
@@ -291,6 +318,8 @@ router.delete('/:id/attachments/:attachmentIdx', verifyToken, requireEditAccess,
       return res.status(404).json({ error: 'Attachment not found' });
     }
     const removed = card.attachments.splice(idx, 1);
+    card.editedBy = { userId: req.user.id, name: req.user.name };
+    card.editedAt = new Date();
     await card.save();
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
@@ -313,7 +342,10 @@ router.post('/:id/upload', verifyToken, requireEditAccess, upload.single('file')
 
     const updatedCard = await Card.findByIdAndUpdate(
       req.params.id,
-      { $push: { attachments: { fileName: req.file.originalname, fileUrl: `/uploads/${req.file.filename}`, fileSize: req.file.size } } },
+      {
+        $push: { attachments: { fileName: req.file.originalname, fileUrl: `/uploads/${req.file.filename}`, fileSize: req.file.size } },
+        $set: { editedBy: { userId: req.user.id, name: req.user.name }, editedAt: new Date() }
+      },
       { new: true }
     );
 
@@ -332,10 +364,26 @@ router.post('/:id/upload', verifyToken, requireEditAccess, upload.single('file')
 });
 
 // Delete Card
-router.delete('/:id', verifyToken, requireEditAccess, async (req, res) => {
+router.delete('/:id', verifyToken, requireDeleteAccess, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
+
+    if (req.deleteRequested) {
+      const request = await DeleteRequest.create({
+        boardId: await getBoardId(req.params.id),
+        targetType: 'card',
+        targetId: req.params.id,
+        targetName: card.title,
+        requestedBy: { userId: req.user.id, name: req.user.name }
+      });
+      const boardId = await getBoardId(req.params.id);
+      if (boardId) {
+        emitEvent(req, boardId, 'delete-request-created', request);
+      }
+      return res.json({ message: 'Delete request sent to admins', request });
+    }
+
     await Card.findByIdAndDelete(req.params.id);
     const boardId = await getBoardId(req.params.id);
     if (boardId) {
