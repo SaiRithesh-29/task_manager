@@ -9,14 +9,7 @@ function HomePage({ onLoginClick }) {
             <Logo className="w-8 h-8" />
             <span className="text-white text-lg font-bold tracking-tight">Task Manager</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onLoginClick}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              Login
-            </button>
-          </div>
+
         </div>
       </nav>
 
