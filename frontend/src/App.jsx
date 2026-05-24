@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import BoardView from './components/BoardView';
 import CardModal from './components/CardModal';
 import AuthPage from './components/AuthPage';
+import HomePage from './components/HomePage';
 import TeamCollaboration from './components/TeamCollaboration';
 import NotificationBell from './components/NotificationBell';
 import ProfileModal from './components/ProfileModal';
@@ -25,6 +26,7 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [onlineMembers, setOnlineMembers] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -55,6 +57,7 @@ function App() {
 
   const handleAuth = (userData) => {
     setUser(userData);
+    setShowAuth(false);
     socket.connect();
     socket.emit('register-user', { userId: userData._id || userData.id });
     loadBoards();
@@ -214,7 +217,10 @@ function App() {
   }
 
   if (!user) {
-    return <AuthPage onAuth={handleAuth} />;
+    if (showAuth) {
+      return <AuthPage onAuth={handleAuth} />;
+    }
+    return <HomePage onLoginClick={() => setShowAuth(true)} />;
   }
 
   return (
