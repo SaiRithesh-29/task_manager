@@ -13,14 +13,13 @@ const LABEL_COLORS = {
   gray: 'bg-gray-500'
 };
 
-function Card({ card, onClick, user }) {
+function Card({ card, onClick, user, canEdit }) {
   const currentUserId = user?._id || user?.id || '';
-  const isCreator = card.createdBy === currentUserId;
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: card._id,
     data: { listId: card.listId },
-    disabled: !isCreator
+    disabled: !canEdit
   });
 
   const style = transform ? {

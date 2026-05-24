@@ -1,5 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middlewares/auth.js';
+import { requireEditAccess } from '../middlewares/boardAccess.js';
 import Board from '../models/Board.js';
 import List from '../models/List.js';
 import Card from '../models/Card.js';
@@ -118,7 +119,7 @@ router.get('/:boardId/full', verifyToken, async (req, res) => {
 });
 
 // Update board
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const updated = await Board.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
@@ -152,7 +153,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
 });
 
 // Add member
-router.post('/:id/members', verifyToken, async (req, res) => {
+router.post('/:id/members', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -179,7 +180,7 @@ router.post('/:id/members', verifyToken, async (req, res) => {
 });
 
 // Remove member
-router.delete('/:id/members/:userId', verifyToken, async (req, res) => {
+router.delete('/:id/members/:userId', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const board = await Board.findById(req.params.id);
     if (!board) return res.status(404).json({ error: "Board not found" });
@@ -199,7 +200,7 @@ router.delete('/:id/members/:userId', verifyToken, async (req, res) => {
 });
 
 // Update member role
-router.patch('/:id/members/:userId/role', verifyToken, async (req, res) => {
+router.patch('/:id/members/:userId/role', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const { role } = req.body;
     const board = await Board.findById(req.params.id);

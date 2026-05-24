@@ -4,6 +4,7 @@ import List from '../models/List.js';
 import Activity from '../models/Activity.js';
 import Notification from '../models/Notification.js';
 import { verifyToken } from '../middlewares/auth.js';
+import { requireBoardMember, requireEditAccess } from '../middlewares/boardAccess.js';
 import { upload } from '../middlewares/upload.js';
 
 const router = express.Router();
@@ -43,7 +44,7 @@ const emitToUser = (req, userId, event, data) => {
 };
 
 // Create Card
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const { title, listId } = req.body;
     if (!title || !listId) {
@@ -77,7 +78,7 @@ router.get('/:listId', verifyToken, async (req, res) => {
 });
 
 // Update Card (title, description, dueDate, listId, order)
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const oldCard = await Card.findById(req.params.id);
     if (!oldCard) return res.status(404).json({ error: 'Card not found' });
@@ -130,7 +131,7 @@ router.put('/:id', verifyToken, async (req, res) => {
 });
 
 // Update Labels
-router.put('/:id/labels', verifyToken, async (req, res) => {
+router.put('/:id/labels', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findByIdAndUpdate(req.params.id, { labels: req.body.labels }, { new: true });
     const boardId = await getBoardId(req.params.id);
@@ -146,7 +147,7 @@ router.put('/:id/labels', verifyToken, async (req, res) => {
 });
 
 // Add Subtask
-router.post('/:id/subtasks', verifyToken, async (req, res) => {
+router.post('/:id/subtasks', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
@@ -165,7 +166,7 @@ router.post('/:id/subtasks', verifyToken, async (req, res) => {
 });
 
 // Toggle Subtask
-router.patch('/:id/subtasks/:subtaskId/toggle', verifyToken, async (req, res) => {
+router.patch('/:id/subtasks/:subtaskId/toggle', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
@@ -186,7 +187,7 @@ router.patch('/:id/subtasks/:subtaskId/toggle', verifyToken, async (req, res) =>
 });
 
 // Remove Subtask
-router.delete('/:id/subtasks/:subtaskId', verifyToken, async (req, res) => {
+router.delete('/:id/subtasks/:subtaskId', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
@@ -206,7 +207,7 @@ router.delete('/:id/subtasks/:subtaskId', verifyToken, async (req, res) => {
 });
 
 // Add Comment
-router.post('/:id/comments', verifyToken, async (req, res) => {
+router.post('/:id/comments', verifyToken, requireBoardMember, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
@@ -229,7 +230,7 @@ router.post('/:id/comments', verifyToken, async (req, res) => {
 });
 
 // Delete Comment
-router.delete('/:id/comments/:commentId', verifyToken, async (req, res) => {
+router.delete('/:id/comments/:commentId', verifyToken, requireBoardMember, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
@@ -246,7 +247,7 @@ router.delete('/:id/comments/:commentId', verifyToken, async (req, res) => {
 });
 
 // Update Assignees
-router.put('/:id/assignees', verifyToken, async (req, res) => {
+router.put('/:id/assignees', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findByIdAndUpdate(req.params.id, { assignees: req.body.assignees }, { new: true });
     const boardId = await getBoardId(req.params.id);
@@ -262,7 +263,7 @@ router.put('/:id/assignees', verifyToken, async (req, res) => {
 });
 
 // Archive / Unarchive Card
-router.patch('/:id/archive', verifyToken, async (req, res) => {
+router.patch('/:id/archive', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const { archived } = req.body;
     const card = await Card.findByIdAndUpdate(req.params.id, { archived }, { new: true });
@@ -281,7 +282,7 @@ router.patch('/:id/archive', verifyToken, async (req, res) => {
 });
 
 // Delete Attachment
-router.delete('/:id/attachments/:attachmentIdx', verifyToken, async (req, res) => {
+router.delete('/:id/attachments/:attachmentIdx', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
@@ -304,7 +305,7 @@ router.delete('/:id/attachments/:attachmentIdx', verifyToken, async (req, res) =
 });
 
 // Upload files
-router.post('/:id/upload', verifyToken, upload.single('file'), async (req, res) => {
+router.post('/:id/upload', verifyToken, requireEditAccess, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'File not received' });
@@ -331,13 +332,10 @@ router.post('/:id/upload', verifyToken, upload.single('file'), async (req, res) 
 });
 
 // Delete Card
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ error: 'Card not found' });
-    if (card.createdBy !== req.user.id) {
-      return res.status(403).json({ error: 'Only the card creator can delete this card' });
-    }
     await Card.findByIdAndDelete(req.params.id);
     const boardId = await getBoardId(req.params.id);
     if (boardId) {

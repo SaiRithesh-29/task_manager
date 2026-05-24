@@ -34,7 +34,9 @@ const LABEL_BG = {
 function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], user: userProp }) {
   const user = userProp || JSON.parse(localStorage.getItem('user') || '{}');
   const currentUserId = user?._id || user?.id || '';
-  const isCreator = initialCard.createdBy === currentUserId;
+  const canEdit = boardMembers.some(
+    m => m.userId === currentUserId && (m.role === 'admin' || m.role === 'member')
+  );
   const [card, setCard] = useState(initialCard);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
@@ -303,10 +305,10 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
           <div className="flex-1 mr-4">
             <input
               value={title}
-              onChange={e => isCreator && setTitle(e.target.value)}
-              onBlur={isCreator ? saveCard : undefined}
-              disabled={!isCreator}
-              className={`w-full text-xl font-bold text-gray-900 border-0 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-1 transition-colors ${!isCreator ? 'bg-transparent cursor-not-allowed' : ''}`}
+              onChange={e => canEdit && setTitle(e.target.value)}
+              onBlur={canEdit ? saveCard : undefined}
+              disabled={!canEdit}
+              className={`w-full text-xl font-bold text-gray-900 border-0 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none py-1 transition-colors ${!canEdit ? 'bg-transparent cursor-not-allowed' : ''}`}
             />
             <p className="text-xs text-gray-400 mt-1">
               {card.createdAt && ` · Created ${formatDate(card.createdAt)}`}
@@ -355,10 +357,10 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                     return (
                       <button
                         key={`${label.name}-${label.color}`}
-                        onClick={() => isCreator && handleToggleLabel(label)}
-                        disabled={!isCreator}
+                        onClick={() => canEdit && handleToggleLabel(label)}
+                        disabled={!canEdit}
                         className={`${LABEL_BG[label.color]} text-white text-xs px-2.5 py-1 rounded-full font-medium transition-all ${
-                          active ? 'ring-2 ring-offset-1 ring-gray-400 scale-105' : isCreator ? 'opacity-60 hover:opacity-100' : 'opacity-40 cursor-not-allowed'
+                          active ? 'ring-2 ring-offset-1 ring-gray-400 scale-105' : canEdit ? 'opacity-60 hover:opacity-100' : 'opacity-40 cursor-not-allowed'
                         }`}
                       >
                         {label.name}
@@ -374,12 +376,12 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                 <input
                   type="date"
                   value={dueDate}
-                  onChange={e => isCreator && setDueDate(e.target.value)}
-                  onBlur={isCreator ? saveCard : undefined}
-                  disabled={!isCreator}
+                  onChange={e => canEdit && setDueDate(e.target.value)}
+                  onBlur={canEdit ? saveCard : undefined}
+                  disabled={!canEdit}
                   className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
-                {dueDate && isCreator && (
+                {dueDate && canEdit && (
                   <button onClick={() => { setDueDate(''); setTimeout(saveCard, 100); }} className="ml-2 text-xs text-red-500 hover:text-red-700">
                     Clear
                   </button>
@@ -396,12 +398,12 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                       return (
                         <button
                           key={member.userId || i}
-                          onClick={() => isCreator && handleToggleAssignee(member)}
-                          disabled={!isCreator}
+                          onClick={() => canEdit && handleToggleAssignee(member)}
+                          disabled={!canEdit}
                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
                             assigned
                               ? 'bg-blue-50 border-blue-300 text-blue-700'
-                              : isCreator ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300' : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                              : canEdit ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300' : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
                           }`}
                         >
                           <span className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white text-[8px] flex items-center justify-center font-bold">
@@ -414,7 +416,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400">{isCreator ? 'Invite members from the Team panel to assign them' : 'No members to display'}</p>
+                  <p className="text-xs text-gray-400">{canEdit ? 'Invite members from the Team panel to assign them' : 'No members to display'}</p>
                 )}
               </div>
 
@@ -423,10 +425,10 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Description</h4>
                 <textarea
                   value={description}
-                  onChange={e => isCreator && setDescription(e.target.value)}
-                  onBlur={isCreator ? saveCard : undefined}
-                  disabled={!isCreator}
-                  placeholder={isCreator ? "Add a description..." : "Description not editable"}
+                  onChange={e => canEdit && setDescription(e.target.value)}
+                  onBlur={canEdit ? saveCard : undefined}
+                  disabled={!canEdit}
+                  placeholder={canEdit ? "Add a description..." : "Description not editable"}
                   rows="3"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
@@ -465,7 +467,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                             {att.fileName}
                           </a>
                           <span className="text-xs text-gray-400">{formatFileSize(att.fileSize)}</span>
-                          {isCreator && (
+                          {canEdit && (
                           <button
                             onClick={() => handleDeleteAttachment(idx)}
                             className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 p-1 rounded transition-all"
@@ -483,7 +485,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                 ) : (
                   <p className="text-xs text-gray-400 mb-3">No attachments</p>
                 )}
-                {isCreator && (
+                {canEdit && (
                 <div
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -522,7 +524,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
 
               {/* Archive / Delete */}
               <div className="border-t pt-4 flex gap-3">
-                {isCreator && (
+                {canEdit && (
                 <button onClick={handleArchive} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
@@ -530,7 +532,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                   Archive
                 </button>
                 )}
-                {card.createdBy === currentUserId && (
+                {canEdit && (
                   <button onClick={handleDelete} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg text-sm text-red-600 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -564,12 +566,12 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                 {card.subtasks?.map(sub => (
                   <div key={sub._id} className="flex items-center gap-2 group">
                     <button
-                      onClick={() => isCreator && handleToggleSubtask(sub._id)}
-                      disabled={!isCreator}
+                      onClick={() => canEdit && handleToggleSubtask(sub._id)}
+                      disabled={!canEdit}
                       className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                         sub.completed
                           ? 'bg-green-500 border-green-500'
-                          : isCreator ? 'border-gray-300 hover:border-blue-500' : 'border-gray-200 cursor-not-allowed'
+                          : canEdit ? 'border-gray-300 hover:border-blue-500' : 'border-gray-200 cursor-not-allowed'
                       }`}
                     >
                       {sub.completed && (
@@ -581,7 +583,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                     <span className={`text-sm flex-1 ${sub.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                       {sub.title}
                     </span>
-                    {isCreator && (
+                    {canEdit && (
                       <button
                         onClick={() => handleRemoveSubtask(sub._id)}
                         className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all text-sm"
@@ -592,7 +594,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                   </div>
                 ))}
               </div>
-              {isCreator && (
+              {canEdit && (
               <form onSubmit={handleAddSubtask} className="flex gap-2">
                 <input
                   value={subtaskTitle}
@@ -643,7 +645,7 @@ function CardModal({ card: initialCard, onClose, onUpdate, boardMembers = [], us
                   <p className="text-sm text-gray-400">No comments yet</p>
                 )}
               </div>
-              {isCreator && (
+              {canEdit && (
               <form onSubmit={handleAddComment} className="flex gap-2">
                 <input
                   value={commentText}

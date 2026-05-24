@@ -9,7 +9,7 @@ npm run dev
 
 ## Environment Variables
 
-Create a `.env` file:
+create a `.env` file with these:
 
 ```
 PORT=5000
@@ -20,5 +20,5 @@ FRONTEND_URL=http://localhost:5173
 
 ## Scripts
 
-- `npm run dev` - Start with nodemon
-- `npm start` - Start normally
+- `npm run dev` - nodemon for dev
+- `npm start` - normal start

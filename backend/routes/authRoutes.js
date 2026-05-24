@@ -13,6 +13,10 @@ router.post('/signup', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({

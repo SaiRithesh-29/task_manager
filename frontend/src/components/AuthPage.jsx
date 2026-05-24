@@ -19,6 +19,11 @@ function AuthPage({ onAuth }) {
       return;
     }
 
+    if (!isLogin && form.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     try {
       const res = isLogin ? await login({ email: form.email, password: form.password }) : await signup(form);
       if (isLogin) {

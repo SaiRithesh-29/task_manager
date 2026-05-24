@@ -2,11 +2,12 @@ import express from 'express';
 import List from '../models/List.js';
 import Activity from '../models/Activity.js';
 import {verifyToken} from '../middlewares/auth.js';
+import { requireEditAccess } from '../middlewares/boardAccess.js';
 
 const router = express.Router();
 
 // Create List
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const list = await List.create({ ...req.body, createdBy: req.user.id });
 
@@ -38,19 +39,16 @@ router.get('/:boardId', verifyToken, async (req, res) => {
 });
 
 // Update List
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, requireEditAccess, async (req, res) => {
   const updated = await List.findByIdAndUpdate(req.params.id, req.body, { new: true });
   res.json(updated);
 });
 
 // Delete List
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, requireEditAccess, async (req, res) => {
   try {
     const list = await List.findById(req.params.id);
     if (!list) return res.status(404).json({ error: 'List not found' });
-    if (list.createdBy !== req.user.id) {
-      return res.status(403).json({ error: 'Only the list creator can delete this list' });
-    }
 
     await List.findByIdAndDelete(req.params.id);
 

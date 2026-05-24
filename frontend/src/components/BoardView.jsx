@@ -6,6 +6,9 @@ import MembersPanel from './MembersPanel';
 
 function BoardView({ boardData, onUpdate, onCardClick, user }) {
   const currentUserId = user?._id || user?.id || '';
+  const canEdit = boardData.members?.some(
+    m => m.userId === currentUserId && (m.role === 'admin' || m.role === 'member')
+  ) || boardData.createdBy === currentUserId;
   const [isAddingList, setIsAddingList] = useState(false);
   const [listTitle, setListTitle] = useState('');
   const [showActivity, setShowActivity] = useState(false);
@@ -150,16 +153,16 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
       <div className="flex-1 overflow-x-auto p-4 md:p-6">
         <div className="flex gap-4 h-full items-start">
           {filteredLists.map(list => (
-            <div key={list._id} className="relative group">
-              {list.createdBy === currentUserId && (
-                <button
-                  onClick={() => handleDeleteList(list._id)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10 shadow-lg"
-                >
-                  ×
-                </button>
-              )}
-              <List list={list} onUpdate={onUpdate} onCardClick={onCardClick} user={user} />
+                <div key={list._id} className="relative group">
+                  {canEdit && (
+                    <button
+                      onClick={() => handleDeleteList(list._id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10 shadow-lg"
+                    >
+                      ×
+                    </button>
+                  )}
+                  <List list={list} onUpdate={onUpdate} onCardClick={onCardClick} user={user} canEdit={canEdit} />
             </div>
           ))}
 
@@ -180,7 +183,7 @@ function BoardView({ boardData, onUpdate, onCardClick, user }) {
                 </div>
               </form>
             </div>
-          ) : (
+          ) : canEdit && (
             <button onClick={() => setIsAddingList(true)} className="w-72 flex-shrink-0 bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl border-2 border-dashed border-white/20 text-white/50 hover:text-white/80 text-sm p-4 transition-all flex items-center gap-2 group">
               <svg className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
